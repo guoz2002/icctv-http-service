@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: icctv-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: 1090119        # 数据库root密码（请自行修改）
+      MYSQL_DATABASE: icctv_http_service                # 默认创建的数据库名
+      MYSQL_USER: icctv                    # 业务用户
+      MYSQL_PASSWORD: 1090119           # 业务用户密码
+    ports:
+      - "3307:3306"                        # 宿主机 3306 -> 容器 3306
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-log-bin
+      - --general-log=0
+      - --slow-query-log=0
+    volumes:
+      - ./data/mysql:/var/lib/mysql        # 数据持久化目录（仅保存数据库数据）
+
+

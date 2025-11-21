@@ -1,0 +1,71 @@
+package routes
+
+import (
+	"net/http"
+
+	"icctv-http-service/controllers"
+	"icctv-http-service/middlewares"
+)
+
+// ControllerSet 聚合所有控制器
+type ControllerSet struct {
+	Auth      *controllers.AuthController
+	Admin     *controllers.AdminController
+	OrangePi  *controllers.OrangePiController
+	Building  *controllers.BuildingController
+	Device    *controllers.DeviceController
+	PublicNet *controllers.PublicNetController
+}
+
+// MiddlewareSet 聚合所有中间件
+type MiddlewareSet struct {
+	Auth *middlewares.AuthMiddleware
+}
+
+// SetupRoutes 注册路由
+func SetupRoutes(mux *http.ServeMux, ctrl ControllerSet, mw MiddlewareSet) {
+	requireAdmin := func(handler http.HandlerFunc) http.HandlerFunc {
+		if mw.Auth != nil {
+			return mw.Auth.RequireAdmin(handler)
+		}
+		return handler
+	}
+
+	// Auth
+	mux.HandleFunc("POST /api/auth/public", ctrl.Auth.PublicToken) // 生成视频访问 Token
+	mux.HandleFunc("POST /api/auth/login", ctrl.Auth.Login)        // 管理员登录
+
+	// Admin
+	mux.HandleFunc("GET /api/admin", requireAdmin(ctrl.Admin.List))
+	mux.HandleFunc("POST /api/admin", requireAdmin(ctrl.Admin.Create))
+	mux.HandleFunc("PUT /api/admin", requireAdmin(ctrl.Admin.Update))
+	mux.HandleFunc("DELETE /api/admin", requireAdmin(ctrl.Admin.Delete))
+
+	// Device (OrangePi)
+	mux.HandleFunc("GET /api/device", requireAdmin(ctrl.OrangePi.List))
+	mux.HandleFunc("POST /api/device", requireAdmin(ctrl.OrangePi.Create))
+	mux.HandleFunc("PUT /api/device", requireAdmin(ctrl.OrangePi.Update))
+	mux.HandleFunc("DELETE /api/device", requireAdmin(ctrl.OrangePi.Delete))
+
+	// OrangePi 远程管理
+	mux.HandleFunc("POST /api/orangepi/remote/ports", requireAdmin(ctrl.OrangePi.RemoteUpdatePorts))
+	mux.HandleFunc("GET /api/orangepi/remote/info", requireAdmin(ctrl.OrangePi.RemoteGetInfo))
+	mux.HandleFunc("GET /api/orangepi/remote/health", requireAdmin(ctrl.OrangePi.RemoteHealthCheck))
+
+	// Building
+	mux.HandleFunc("GET /api/building", requireAdmin(ctrl.Building.List))
+	mux.HandleFunc("POST /api/building", requireAdmin(ctrl.Building.Create))
+	mux.HandleFunc("PUT /api/building", requireAdmin(ctrl.Building.Update))
+	mux.HandleFunc("DELETE /api/building", requireAdmin(ctrl.Building.Delete))
+
+	// Building-OrangePi 绑定管理
+	mux.HandleFunc("POST /api/building/bind", requireAdmin(ctrl.Building.BindOrangePi))
+	mux.HandleFunc("POST /api/building/unbind", requireAdmin(ctrl.Building.UnbindOrangePi))
+	mux.HandleFunc("PUT /api/building/bind", requireAdmin(ctrl.Building.UpdateBind))
+
+	// Device info
+	mux.HandleFunc("GET /api/device/info", requireAdmin(ctrl.Device.Summary))
+
+	// Public net
+	mux.HandleFunc("PUT /api/publicnet/config", requireAdmin(ctrl.PublicNet.Update))
+}

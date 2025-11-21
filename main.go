@@ -3,17 +3,46 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
+
+	appcontainer "icctv-http-service/container"
+	"icctv-http-service/routes"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// 尝试加载 .env 文件，如果文件不存在也不会报错（适用于生产环境直接注入环境变量的情况）
+	if err := godotenv.Load(); err != nil {
+		log.Printf("Warning: .env file not loaded: %v", err)
+	} else {
+		log.Println("✓ .env file loaded successfully")
+	}
+
+	// 调试：打印关键环境变量
+	log.Printf("DB_DRIVER=%s", os.Getenv("DB_DRIVER"))
+	log.Printf("DB_HOST=%s", os.Getenv("DB_HOST"))
+	log.Printf("DB_PORT=%s", os.Getenv("DB_PORT"))
+
+	container, err := appcontainer.Build()
+	if err != nil {
+		log.Fatalf("failed to build container: %v", err)
+	}
+
 	mux := http.NewServeMux()
 
-	// 最简健康检查接口：用于判断服务是否存活
+	// Health check
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("ok"))
 	})
 
-	addr := ":8080"
+	// Routes
+	routes.SetupRoutes(mux, container.Controllers, container.Middlewares)
+
+	addr := os.Getenv("HTTP_ADDR")
+	if addr == "" {
+		addr = ":8080"
+	}
 	log.Printf("OrangePi HTTP service listening on %s", addr)
 
 	if err := http.ListenAndServe(addr, mux); err != nil {
