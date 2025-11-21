@@ -19,6 +19,9 @@ services:
       - --general-log=0
       - --slow-query-log=0
     volumes:
-      - ./data/mysql:/var/lib/mysql        # 数据持久化目录（仅保存数据库数据）
+      - icctv_mysql_data:/var/lib/mysql        # 使用 Docker 卷持久化数据
+
+volumes:
+  icctv_mysql_data:
 
 
