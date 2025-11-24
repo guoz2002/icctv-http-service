@@ -152,6 +152,12 @@ type User struct {
     Name     string `json:"name"`     // 用户名
     Password string `json:"password"` // 密码
 }
+
+// ChannelURL RTSP频道地址
+type ChannelURL struct {
+    Channel int    `json:"channel"` // 通道号
+    URL     string `json:"url"`     // RTSP 地址
+}
 ```
 
 #### NVR 完整模型
@@ -160,15 +166,67 @@ type User struct {
 type NVR struct {
     ModelFields
     
-    Name       string     `json:"name"`        // NVR 名称
-    URL        string     `json:"url"`         // NVR 访问地址 (IP:Port)
-    BuildingID int64      `json:"building_id"` // 关联建筑ID (外键)
-    AdminUser  AdminUser  `json:"admin_user"`  // 管理员账户
-    Users      []User     `json:"users"`       // 普通用户列表
+    Name       string       `json:"name"`        // NVR 名称
+    URL        string       `json:"url"`         // NVR 访问地址 (IP:Port)
+    BuildingID int64        `json:"building_id"` // 关联建筑ID (外键)
+    AdminUser  AdminUser    `json:"admin_user"`  // 管理员账户
+    Users      []User       `json:"users"`       // 普通用户列表
+    RTSPUrls   []ChannelURL `json:"rtsp_urls"`   // RTSP 地址列表
     
     // 关联关系 (多对一)
-    Building   Building   `json:"building,omitempty"` // 所属建筑
+    Building   Building     `json:"building,omitempty"` // 所属建筑
 }
+```
 
+**字段说明:**
+- `name`: NVR 设备的显示名称
+- `url`: NVR 的管理访问地址，格式为 `IP:Port` (如: `192.168.1.100:80`)
+- `building_id`: 关联的建筑ID
+- `admin_user`: 管理员账户信息
+- `users`: 普通用户列表
+- `rtsp_urls`: RTSP流地址列表，每个包含通道号和对应的RTSP URL
 
+**完整数据示例:**
 
+```json
+{
+    "id": 1,
+    "name": "A楼监控系统",
+    "url": "192.168.1.100:8080",
+    "building_id": 5,
+    "admin_user": {
+        "name": "admin",
+        "password": "admin123"
+    },
+    "users": [
+        {
+            "name": "operator1",
+            "password": "pass123"
+        },
+        {
+            "name": "operator2",
+            "password": "pass456"
+        }
+    ],
+    "rtsp_urls": [
+        {
+            "channel": 1,
+            "url": "rtsp://192.168.1.100:554/stream1"
+        },
+        {
+            "channel": 2,
+            "url": "rtsp://192.168.1.100:554/stream2"
+        },
+        {
+            "channel": 3,
+            "url": "rtsp://192.168.1.100:554/stream3"
+        }
+    ],
+    "building": {
+        "id": 5,
+        "name": "办公楼A栋"
+    },
+    "createdAt": "2025-11-24T10:00:00Z",
+    "updatedAt": "2025-11-24T10:00:00Z"
+}
+```

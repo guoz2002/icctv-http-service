@@ -12,16 +12,27 @@ type User struct {
 	Password string `json:"password"` // 密码
 }
 
+// ChannelURL RTSP频道地址
+type ChannelURL struct {
+	Channel int    `json:"channel"` // 通道号
+	URL     string `json:"url"`     // RTSP 地址
+}
+
 // NVR 网络硬盘录像机模型
 type NVR struct {
 	ModelFields
 
-	Name       string    `gorm:"type:varchar(255);not null" json:"name"`           // NVR 名称
-	URL        string    `gorm:"type:varchar(255);not null;column:url" json:"url"` // NVR 访问地址 (IP:Port)
-	BuildingID int64     `gorm:"not null;index" json:"building_id"`                // 关联建筑ID
-	AdminUser  AdminUser `gorm:"type:json;serializer:json" json:"admin_user"`      // 管理员账户(JSON存储)
-	Users      []User    `gorm:"type:json;serializer:json" json:"users"`           // 普通用户列表(JSON存储)
-
+	Name       string       `gorm:"type:varchar(255);not null" json:"name"`           // NVR 名称
+	URL        string       `gorm:"type:varchar(255);not null;column:url" json:"url"` // NVR 访问地址 (IP:Port)
+	BuildingID int64        `gorm:"not null;index" json:"building_id"`                // 关联建筑ID
+	AdminUser  AdminUser    `gorm:"type:json;serializer:json" json:"admin_user"`      // 管理员账户(JSON存储)
+	Users      []User       `gorm:"type:json;serializer:json" json:"users"`           // 普通用户列表(JSON存储)
+	RTSPUrls   []ChannelURL `gorm:"type:json;serializer:json" json:"rtsp_urls"`       // RTSP 地址列表(JSON存储)
 	// 关联关系
 	Building Building `gorm:"foreignKey:BuildingID;references:ID" json:"building,omitempty"` // 所属建筑
+}
+
+// TableName 指定表名
+func (NVR) TableName() string {
+	return "nvrs"
 }

@@ -18,11 +18,11 @@ import (
 
 // NVRServiceInterface 定义NVR业务能力
 type NVRServiceInterface interface {
-	List(ctx context.Context) ([]models.NVR, error)                              //1.查询NVR列表
-	GetByID(ctx context.Context, id int64) (*models.NVR, error)                  //2.根据ID查询NVR
-	Create(ctx context.Context, payload models.NVR) (*models.NVR, error)         //3.创建NVR
+	List(ctx context.Context) ([]models.NVR, error)                                //1.查询NVR列表
+	GetByID(ctx context.Context, id int64) (*models.NVR, error)                    //2.根据ID查询NVR
+	Create(ctx context.Context, payload models.NVR) (*models.NVR, error)           //3.创建NVR
 	Update(ctx context.Context, id int64, payload models.NVR) (*models.NVR, error) //4.更新NVR
-	Delete(ctx context.Context, id int64) error                                  //5.删除NVR
+	Delete(ctx context.Context, id int64) error                                    //5.删除NVR
 }
 
 // NVRService NVR业务逻辑
@@ -82,6 +82,9 @@ func (s *NVRService) Update(ctx context.Context, id int64, payload models.NVR) (
 	}
 	if len(payload.Users) > 0 {
 		item.Users = payload.Users
+	}
+	if len(payload.RTSPUrls) > 0 {
+		item.RTSPUrls = payload.RTSPUrls
 	}
 
 	if err := s.db.WithContext(ctx).Save(&item).Error; err != nil {
