@@ -10,9 +10,5 @@ type Building struct {
 
 	// 关联关系
 	OrangePis []OrangePi `gorm:"foreignKey:ISmartID;references:ISmartID" json:"orangepis,omitempty"` // 关联的OrangePi设备列表
-}
-
-// TableName 指定表名
-func (Building) TableName() string {
-	return "buildings"
+	NVRs      []NVR      `gorm:"foreignKey:BuildingID;references:ID" json:"nvrs,omitempty"`          // 关联的NVR设备列表
 }
