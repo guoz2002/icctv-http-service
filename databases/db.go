@@ -73,6 +73,7 @@ func Init() (*gorm.DB, error) {
 			&models.PublicNetConfig{},
 			&models.Building{}, // 必须在 OrangePi 前面，因为 OrangePi 有外键关联
 			&models.OrangePi{},
+			&models.NVR{}, // NVR 依赖 Building
 		); err != nil {
 			initErr = err
 			return

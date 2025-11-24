@@ -18,6 +18,7 @@ type ServiceSet struct {
 	Building  *services.BuildingService
 	Device    *services.DeviceService
 	PublicNet *services.PublicNetService
+	NVR       *services.NVRService
 }
 
 // Container 提供项目运行所需的依赖
@@ -40,6 +41,7 @@ func Build() (*Container, error) {
 		Building:  services.NewBuildingService(db),
 		Device:    services.NewDeviceService(db),
 		PublicNet: services.NewPublicNetService(db),
+		NVR:       services.NewNVRService(db),
 	}
 	serviceSet.OrangePi = services.NewOrangePiService(db, serviceSet.PublicNet)
 	serviceSet.Auth = services.NewAuthService(db, serviceSet.Admin, serviceSet.OrangePi, serviceSet.Building)
@@ -51,6 +53,7 @@ func Build() (*Container, error) {
 		Building:  controllers.NewBuildingController(serviceSet.Building),
 		Device:    controllers.NewDeviceController(serviceSet.Device, serviceSet.OrangePi),
 		PublicNet: controllers.NewPublicNetController(serviceSet.PublicNet),
+		NVR:       controllers.NewNVRController(serviceSet.NVR),
 	}
 
 	middlewareSet := routes.MiddlewareSet{
