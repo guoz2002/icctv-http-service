@@ -24,6 +24,10 @@ type BuildingServiceInterface interface {
 	BindOrangePi(ctx context.Context, buildingId int64, orangePiId int64) error              //5.绑定OrangePi到建筑
 	UnbindOrangePi(ctx context.Context, orangePiId int64) error                              //6.解绑OrangePi
 	UpdateBind(ctx context.Context, orangePiId int64, newBuildingId int64) error             //7.更新绑定关系
+	GetOrangePisByBuildingID(ctx context.Context, buildingId int64) ([]models.OrangePi, error) //8.查询Building关联的OrangePi
+	BindNVR(ctx context.Context, buildingId int64, nvrId int64) error                        //9.绑定NVR到建筑
+	UnbindNVR(ctx context.Context, nvrId int64) error                                        //10.解绑NVR
+	GetNVRsByBuildingID(ctx context.Context, buildingId int64) ([]models.NVR, error)         //11.查询Building关联的NVR
 }
 
 // BuildingService 建筑业务逻辑
@@ -130,4 +134,54 @@ func (s *BuildingService) UpdateBind(ctx context.Context, orangePiId int64, newB
 	// 更新OrangePi的ISmartID
 	orangePi.ISmartID = newBuilding.ISmartID
 	return s.db.WithContext(ctx).Save(&orangePi).Error
+}
+
+// 8. GetOrangePisByBuildingID 查询Building关联的所有OrangePi
+func (s *BuildingService) GetOrangePisByBuildingID(ctx context.Context, buildingId int64) ([]models.OrangePi, error) {
+	var building models.Building
+	if err := s.db.WithContext(ctx).Preload("OrangePis").First(&building, buildingId).Error; err != nil {
+		return nil, err
+	}
+	return building.OrangePis, nil
+}
+
+// 9. BindNVR 绑定NVR到建筑
+func (s *BuildingService) BindNVR(ctx context.Context, buildingId int64, nvrId int64) error {
+	// 检查建筑是否存在
+	var building models.Building
+	if err := s.db.WithContext(ctx).First(&building, buildingId).Error; err != nil {
+		return err
+	}
+
+	// 检查NVR是否存在
+	var nvr models.NVR
+	if err := s.db.WithContext(ctx).First(&nvr, nvrId).Error; err != nil {
+		return err
+	}
+
+	// 更新NVR的BuildingID
+	nvr.BuildingID = buildingId
+	return s.db.WithContext(ctx).Save(&nvr).Error
+}
+
+// 10. UnbindNVR 解绑NVR
+func (s *BuildingService) UnbindNVR(ctx context.Context, nvrId int64) error {
+	// 检查NVR是否存在
+	var nvr models.NVR
+	if err := s.db.WithContext(ctx).First(&nvr, nvrId).Error; err != nil {
+		return err
+	}
+
+	// 清空BuildingID（设为0或NULL）
+	nvr.BuildingID = 0
+	return s.db.WithContext(ctx).Save(&nvr).Error
+}
+
+// 11. GetNVRsByBuildingID 查询Building关联的所有NVR
+func (s *BuildingService) GetNVRsByBuildingID(ctx context.Context, buildingId int64) ([]models.NVR, error) {
+	var building models.Building
+	if err := s.db.WithContext(ctx).Preload("NVRs").First(&building, buildingId).Error; err != nil {
+		return nil, err
+	}
+	return building.NVRs, nil
 }

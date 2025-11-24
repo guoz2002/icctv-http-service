@@ -15,6 +15,7 @@ type ControllerSet struct {
 	Building  *controllers.BuildingController
 	Device    *controllers.DeviceController
 	PublicNet *controllers.PublicNetController
+	NVR       *controllers.NVRController
 }
 
 // MiddlewareSet 聚合所有中间件
@@ -68,4 +69,20 @@ func SetupRoutes(mux *http.ServeMux, ctrl ControllerSet, mw MiddlewareSet) {
 
 	// Public net
 	mux.HandleFunc("PUT /api/publicnet/config", requireAdmin(ctrl.PublicNet.Update))
+
+	// Building-OrangePi 绑定管理 (新路由路径)
+	mux.HandleFunc("POST /api/bind/building-orangepi", requireAdmin(ctrl.Building.BindOrangePi))
+	mux.HandleFunc("DELETE /api/bind/building-orangepi", requireAdmin(ctrl.Building.UnbindOrangePi))
+	mux.HandleFunc("GET /api/bind/building-orangepi/{building_id}", requireAdmin(ctrl.Building.GetBuildingOrangePis))
+
+	// Building-NVR 绑定管理
+	mux.HandleFunc("POST /api/bind/building-nvr", requireAdmin(ctrl.Building.BindNVR))
+	mux.HandleFunc("DELETE /api/bind/building-nvr", requireAdmin(ctrl.Building.UnbindNVR))
+	mux.HandleFunc("GET /api/bind/building-nvr/{building_id}", requireAdmin(ctrl.Building.GetBuildingNVRs))
+
+	// NVR
+	mux.HandleFunc("GET /api/nvr", requireAdmin(ctrl.NVR.List))
+	mux.HandleFunc("POST /api/nvr", requireAdmin(ctrl.NVR.Create))
+	mux.HandleFunc("PUT /api/nvr", requireAdmin(ctrl.NVR.Update))
+	mux.HandleFunc("DELETE /api/nvr", requireAdmin(ctrl.NVR.Delete))
 }

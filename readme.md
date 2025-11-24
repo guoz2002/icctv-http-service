@@ -56,9 +56,9 @@
 
 | 编号 | 接口 | 方法 | 功能 | 权限要求 |
 |------|------|------|------|----------|
-| 16 | `/api/device/info` | GET | 获取设备信息 | 操作员 |
-| 17 | `/api/device/ports` | POST | 远程更新FRPC端口并重启 | 管理员 |
-| 19 | `/api/publicnet/config` | PUT | 修改公网配置 | 管理员 |
+| 16 | `/api/device/info` | GET | 获取设备信息 | 操作员 |（TODO）
+| 17 | `/api/device/ports` | POST | 远程更新FRPC端口并重启 | 管理员 |（TODO）
+| 19 | `/api/publicnet/config` | PUT | 修改公网配置 | 管理员 |（TODO）
 
 
 

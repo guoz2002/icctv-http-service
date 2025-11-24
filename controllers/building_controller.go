@@ -9,6 +9,7 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 
 	"icctv-http-service/models"
 	"icctv-http-service/services"
@@ -16,13 +17,17 @@ import (
 
 // BuildingControllerInterface 定义建筑接口能力
 type BuildingControllerInterface interface {
-	List(w http.ResponseWriter, r *http.Request)           //1.查询建筑
-	Create(w http.ResponseWriter, r *http.Request)         //2.创建建筑
-	Update(w http.ResponseWriter, r *http.Request)         //3.更新建筑
-	Delete(w http.ResponseWriter, r *http.Request)         //4.删除建筑
-	BindOrangePi(w http.ResponseWriter, r *http.Request)   //5.绑定OrangePi
-	UnbindOrangePi(w http.ResponseWriter, r *http.Request) //6.解绑OrangePi
-	UpdateBind(w http.ResponseWriter, r *http.Request)     //7.更新绑定
+	List(w http.ResponseWriter, r *http.Request)              //1.查询建筑
+	Create(w http.ResponseWriter, r *http.Request)            //2.创建建筑
+	Update(w http.ResponseWriter, r *http.Request)            //3.更新建筑
+	Delete(w http.ResponseWriter, r *http.Request)            //4.删除建筑
+	BindOrangePi(w http.ResponseWriter, r *http.Request)      //5.绑定OrangePi
+	UnbindOrangePi(w http.ResponseWriter, r *http.Request)    //6.解绑OrangePi
+	UpdateBind(w http.ResponseWriter, r *http.Request)        //7.更新绑定
+	GetBuildingOrangePis(w http.ResponseWriter, r *http.Request) //8.查询Building关联的OrangePi
+	BindNVR(w http.ResponseWriter, r *http.Request)           //9.绑定NVR
+	UnbindNVR(w http.ResponseWriter, r *http.Request)         //10.解绑NVR
+	GetBuildingNVRs(w http.ResponseWriter, r *http.Request)   //11.查询Building关联的NVR
 }
 
 // BuildingController 建筑接口
@@ -160,4 +165,95 @@ func (c *BuildingController) UpdateBind(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	respondData(w, http.StatusOK, map[string]bool{"updated": true})
+}
+
+// 8. GetBuildingOrangePis 查询Building关联的所有OrangePi
+func (c *BuildingController) GetBuildingOrangePis(w http.ResponseWriter, r *http.Request) {
+	// 从路径参数中获取building_id
+	buildingIDStr := r.PathValue("building_id")
+	if buildingIDStr == "" {
+		respondError(w, http.StatusBadRequest, "building_id is required")
+		return
+	}
+	
+	buildingID, err := strconv.ParseInt(buildingIDStr, 10, 64)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid building_id")
+		return
+	}
+	
+	orangePis, err := c.service.GetOrangePisByBuildingID(r.Context(), buildingID)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondData(w, http.StatusOK, orangePis)
+}
+
+type bindNVRRequest struct {
+	BuildingID int64 `json:"building_id"`
+	NVRID      int64 `json:"nvr_id"`
+}
+
+type unbindNVRRequest struct {
+	NVRID int64 `json:"nvr_id"`
+}
+
+// 9. BindNVR 绑定NVR到建筑
+func (c *BuildingController) BindNVR(w http.ResponseWriter, r *http.Request) {
+	var req bindNVRRequest
+	if err := decodeJSON(r, &req); err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if req.BuildingID == 0 || req.NVRID == 0 {
+		respondError(w, http.StatusBadRequest, "building_id and nvr_id are required")
+		return
+	}
+	if err := c.service.BindNVR(r.Context(), req.BuildingID, req.NVRID); err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondData(w, http.StatusOK, map[string]bool{"bound": true})
+}
+
+// 10. UnbindNVR 解绑NVR
+func (c *BuildingController) UnbindNVR(w http.ResponseWriter, r *http.Request) {
+	var req unbindNVRRequest
+	if err := decodeJSON(r, &req); err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if req.NVRID == 0 {
+		respondError(w, http.StatusBadRequest, "nvr_id is required")
+		return
+	}
+	if err := c.service.UnbindNVR(r.Context(), req.NVRID); err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondData(w, http.StatusOK, map[string]bool{"unbound": true})
+}
+
+// 11. GetBuildingNVRs 查询Building关联的所有NVR
+func (c *BuildingController) GetBuildingNVRs(w http.ResponseWriter, r *http.Request) {
+	// 从路径参数中获取building_id
+	buildingIDStr := r.PathValue("building_id")
+	if buildingIDStr == "" {
+		respondError(w, http.StatusBadRequest, "building_id is required")
+		return
+	}
+	
+	buildingID, err := strconv.ParseInt(buildingIDStr, 10, 64)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid building_id")
+		return
+	}
+	
+	nvrs, err := c.service.GetNVRsByBuildingID(r.Context(), buildingID)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondData(w, http.StatusOK, nvrs)
 }
