@@ -8,6 +8,7 @@ import (
 
 	"icctv-http-service/models"
 
+	"golang.org/x/crypto/bcrypt"
 	gmysql "gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -79,6 +80,12 @@ func Init() (*gorm.DB, error) {
 			return
 		}
 
+		// 初始化默认数据
+		if err := initDefaultData(conn); err != nil {
+			log.Printf("Warning: failed to initialize default data: %v", err)
+			// 不阻止启动，只记录警告
+		}
+
 		db = conn
 	})
 
@@ -104,4 +111,36 @@ func getenvDefault(key, defVal string) string {
 		return val
 	}
 	return defVal
+}
+
+// initDefaultData 初始化默认数据（如默认管理员账户）
+func initDefaultData(db *gorm.DB) error {
+	// 检查是否已有管理员账户
+	var adminCount int64
+	if err := db.Model(&models.Adminer{}).Count(&adminCount).Error; err != nil {
+		return fmt.Errorf("failed to check admin count: %w", err)
+	}
+
+	// 如果没有管理员，创建默认管理员账户
+	if adminCount == 0 {
+		// 密码: 123456 的 bcrypt 哈希值
+		// 使用 bcrypt.DefaultCost 生成，与 AdminService 保持一致
+		passwordHash, err := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
+		if err != nil {
+			return fmt.Errorf("failed to hash password: %w", err)
+		}
+
+		defaultAdmin := &models.Adminer{
+			Username:     "admin",
+			PasswordHash: string(passwordHash),
+		}
+
+		if err := db.Create(defaultAdmin).Error; err != nil {
+			return fmt.Errorf("failed to create default admin: %w", err)
+		}
+
+		log.Println("✓ Default admin account created (username: admin, password: 123456)")
+	}
+
+	return nil
 }

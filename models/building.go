@@ -4,7 +4,7 @@ package models
 type Building struct {
 	ModelFields
 
-	ISmartID string `gorm:"type:varchar(100);not null;column:ismart_id;-:migration" json:"ismartid"` // ismart 系统ID，唯一标识
+	ISmartID string `gorm:"type:varchar(100);not null;uniqueIndex;column:ismart_id" json:"ismartid"` // ismart 系统ID，唯一标识
 	Name     string `gorm:"type:varchar(255);not null" json:"name"`                                  // 楼栋名称
 	Remark   string `gorm:"type:text" json:"remark"`                                                 // 备注信息
 
