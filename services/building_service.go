@@ -9,10 +9,20 @@ package services
 
 import (
 	"context"
+	"errors"
 
 	"icctv-http-service/models"
 
 	"gorm.io/gorm"
+)
+
+// 错误定义
+var (
+	ErrBuildingNotFound = errors.New("building not found")
+	ErrOrangePiNotFound = errors.New("orangepi not found")
+	ErrNVRNotFound      = errors.New("nvr not found")
+	ErrAlreadyBound     = errors.New("already bound to another building")
+	ErrNotBound         = errors.New("not bound to any building")
 )
 
 // BuildingServiceInterface 定义建筑业务能力
@@ -87,34 +97,67 @@ func (s *BuildingService) Delete(ctx context.Context, id int64) error {
 
 // 5. BindOrangePi 绑定OrangePi到建筑
 func (s *BuildingService) BindOrangePi(ctx context.Context, buildingId int64, orangePiId int64) error {
-	// 检查建筑是否存在
-	var building models.Building
-	if err := s.db.WithContext(ctx).First(&building, buildingId).Error; err != nil {
-		return err
-	}
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 检查建筑是否存在
+		var building models.Building
+		if err := tx.First(&building, buildingId).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrBuildingNotFound
+			}
+			return err
+		}
 
-	// 检查OrangePi是否存在
-	var orangePi models.OrangePi
-	if err := s.db.WithContext(ctx).First(&orangePi, orangePiId).Error; err != nil {
-		return err
-	}
+		// 检查建筑是否有有效的 ISmartID
+		if building.ISmartID == "" {
+			return errors.New("building has no ismart_id")
+		}
 
-	// 更新OrangePi的ISmartID
-	orangePi.ISmartID = building.ISmartID
-	return s.db.WithContext(ctx).Save(&orangePi).Error
+		// 检查OrangePi是否存在
+		var orangePi models.OrangePi
+		if err := tx.First(&orangePi, orangePiId).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrOrangePiNotFound
+			}
+			return err
+		}
+
+		// 检查OrangePi是否已绑定到其他建筑
+		if orangePi.ISmartID != "" && orangePi.ISmartID != building.ISmartID {
+			return ErrAlreadyBound
+		}
+
+		// 如果已经绑定到当前建筑，直接返回成功
+		if orangePi.ISmartID == building.ISmartID {
+			return nil
+		}
+
+		// 更新OrangePi的ISmartID
+		orangePi.ISmartID = building.ISmartID
+		return tx.Save(&orangePi).Error
+	})
 }
 
 // 6. UnbindOrangePi 解绑OrangePi
 func (s *BuildingService) UnbindOrangePi(ctx context.Context, orangePiId int64) error {
-	// 检查OrangePi是否存在
-	var orangePi models.OrangePi
-	if err := s.db.WithContext(ctx).First(&orangePi, orangePiId).Error; err != nil {
-		return err
-	}
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 检查OrangePi是否存在
+		var orangePi models.OrangePi
+		if err := tx.First(&orangePi, orangePiId).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrOrangePiNotFound
+			}
+			return err
+		}
 
-	// 清空ISmartID（设为空字符串或NULL）
-	orangePi.ISmartID = ""
-	return s.db.WithContext(ctx).Save(&orangePi).Error
+		// 检查OrangePi是否已绑定
+		if orangePi.ISmartID == "" {
+			return ErrNotBound
+		}
+
+		// 清空ISmartID（设为空字符串）
+		orangePi.ISmartID = ""
+		return tx.Save(&orangePi).Error
+	})
 }
 
 // 7. UpdateBind 更新绑定关系
@@ -147,34 +190,62 @@ func (s *BuildingService) GetOrangePisByBuildingID(ctx context.Context, building
 
 // 9. BindNVR 绑定NVR到建筑
 func (s *BuildingService) BindNVR(ctx context.Context, buildingId int64, nvrId int64) error {
-	// 检查建筑是否存在
-	var building models.Building
-	if err := s.db.WithContext(ctx).First(&building, buildingId).Error; err != nil {
-		return err
-	}
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 检查建筑是否存在
+		var building models.Building
+		if err := tx.First(&building, buildingId).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrBuildingNotFound
+			}
+			return err
+		}
 
-	// 检查NVR是否存在
-	var nvr models.NVR
-	if err := s.db.WithContext(ctx).First(&nvr, nvrId).Error; err != nil {
-		return err
-	}
+		// 检查NVR是否存在
+		var nvr models.NVR
+		if err := tx.First(&nvr, nvrId).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrNVRNotFound
+			}
+			return err
+		}
 
-	// 更新NVR的BuildingID
-	nvr.BuildingID = buildingId
-	return s.db.WithContext(ctx).Save(&nvr).Error
+		// 检查NVR是否已绑定到其他建筑
+		if nvr.BuildingID != 0 && nvr.BuildingID != buildingId {
+			return ErrAlreadyBound
+		}
+
+		// 如果已经绑定到当前建筑，直接返回成功
+		if nvr.BuildingID == buildingId {
+			return nil
+		}
+
+		// 更新NVR的BuildingID
+		nvr.BuildingID = buildingId
+		return tx.Save(&nvr).Error
+	})
 }
 
 // 10. UnbindNVR 解绑NVR
 func (s *BuildingService) UnbindNVR(ctx context.Context, nvrId int64) error {
-	// 检查NVR是否存在
-	var nvr models.NVR
-	if err := s.db.WithContext(ctx).First(&nvr, nvrId).Error; err != nil {
-		return err
-	}
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 检查NVR是否存在
+		var nvr models.NVR
+		if err := tx.First(&nvr, nvrId).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrNVRNotFound
+			}
+			return err
+		}
 
-	// 清空BuildingID（设为0或NULL）
-	nvr.BuildingID = 0
-	return s.db.WithContext(ctx).Save(&nvr).Error
+		// 检查NVR是否已绑定
+		if nvr.BuildingID == 0 {
+			return ErrNotBound
+		}
+
+		// 清空BuildingID（设为0）
+		nvr.BuildingID = 0
+		return tx.Save(&nvr).Error
+	})
 }
 
 // 11. GetNVRsByBuildingID 查询Building关联的所有NVR

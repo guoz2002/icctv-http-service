@@ -62,3 +62,25 @@ func parseIDFromQuery(r *http.Request) (int64, error) {
 	}
 	return strconv.ParseInt(idStr, 10, 64)
 }
+
+// handleServiceError 根据服务层错误返回合适的HTTP状态码和错误信息
+func handleServiceError(w http.ResponseWriter, err error) {
+	if err == nil {
+		return
+	}
+
+	// 导入services包以访问错误常量
+	// 注意：这里使用字符串匹配，因为不能直接导入services包（避免循环依赖）
+	errMsg := err.Error()
+	
+	// 根据错误消息判断错误类型
+	switch errMsg {
+	case "building not found", "orangepi not found", "nvr not found":
+		respondError(w, http.StatusNotFound, errMsg)
+	case "already bound to another building", "not bound to any building", "building has no ismart_id":
+		respondError(w, http.StatusBadRequest, errMsg)
+	default:
+		// 其他错误默认为500
+		respondError(w, http.StatusInternalServerError, errMsg)
+	}
+}

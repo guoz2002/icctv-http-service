@@ -9,6 +9,6 @@ type Building struct {
 	Remark   string `gorm:"type:text" json:"remark"`                                                 // 备注信息
 
 	// 关联关系
-	OrangePis []OrangePi `gorm:"foreignKey:ISmartID;references:ISmartID" json:"orangepis,omitempty"` // 关联的OrangePi设备列表
-	NVRs      []NVR      `gorm:"foreignKey:BuildingID;references:ID" json:"nvrs,omitempty"`          // 关联的NVR设备列表
+	OrangePis []OrangePi `gorm:"foreignKey:ISmartID;references:ISmartID" json:"orangepis,omitempty"`              // 关联的OrangePi设备列表
+	NVRs      []NVR      `gorm:"foreignKey:BuildingISmartID;references:ISmartID" json:"nvrs,omitempty"`          // 关联的NVR设备列表
 }
