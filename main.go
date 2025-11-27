@@ -6,6 +6,7 @@ import (
 	"os"
 
 	appcontainer "icctv-http-service/container"
+	"icctv-http-service/middlewares"
 	"icctv-http-service/routes"
 
 	"github.com/joho/godotenv"
@@ -39,13 +40,17 @@ func main() {
 	// Routes
 	routes.SetupRoutes(mux, container.Controllers, container.Middlewares)
 
+	// 应用 CORS 中间件
+	corsMiddleware := middlewares.NewCORSMiddleware()
+	handler := corsMiddleware.Handle(mux)
+
 	addr := os.Getenv("HTTP_ADDR")
 	if addr == "" {
 		addr = ":8080"
 	}
 	log.Printf("OrangePi HTTP service listening on %s", addr)
 
-	if err := http.ListenAndServe(addr, mux); err != nil {
+	if err := http.ListenAndServe(addr, handler); err != nil {
 		log.Fatalf("server stopped: %v", err)
 	}
 }

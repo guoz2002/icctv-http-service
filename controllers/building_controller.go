@@ -120,12 +120,12 @@ func (c *BuildingController) BindOrangePi(w http.ResponseWriter, r *http.Request
 		respondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if req.BuildingID == 0 || req.OrangePiID == 0 {
-		respondError(w, http.StatusBadRequest, "building_id and orangepi_id are required")
+	if req.BuildingID <= 0 || req.OrangePiID <= 0 {
+		respondError(w, http.StatusBadRequest, "building_id and orangepi_id must be positive integers")
 		return
 	}
 	if err := c.service.BindOrangePi(r.Context(), req.BuildingID, req.OrangePiID); err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		handleServiceError(w, err)
 		return
 	}
 	respondData(w, http.StatusOK, map[string]bool{"bound": true})
@@ -138,12 +138,12 @@ func (c *BuildingController) UnbindOrangePi(w http.ResponseWriter, r *http.Reque
 		respondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if req.OrangePiID == 0 {
-		respondError(w, http.StatusBadRequest, "orangepi_id is required")
+	if req.OrangePiID <= 0 {
+		respondError(w, http.StatusBadRequest, "orangepi_id must be a positive integer")
 		return
 	}
 	if err := c.service.UnbindOrangePi(r.Context(), req.OrangePiID); err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		handleServiceError(w, err)
 		return
 	}
 	respondData(w, http.StatusOK, map[string]bool{"unbound": true})
@@ -206,12 +206,12 @@ func (c *BuildingController) BindNVR(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if req.BuildingID == 0 || req.NVRID == 0 {
-		respondError(w, http.StatusBadRequest, "building_id and nvr_id are required")
+	if req.BuildingID <= 0 || req.NVRID <= 0 {
+		respondError(w, http.StatusBadRequest, "building_id and nvr_id must be positive integers")
 		return
 	}
 	if err := c.service.BindNVR(r.Context(), req.BuildingID, req.NVRID); err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		handleServiceError(w, err)
 		return
 	}
 	respondData(w, http.StatusOK, map[string]bool{"bound": true})
@@ -224,12 +224,12 @@ func (c *BuildingController) UnbindNVR(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if req.NVRID == 0 {
-		respondError(w, http.StatusBadRequest, "nvr_id is required")
+	if req.NVRID <= 0 {
+		respondError(w, http.StatusBadRequest, "nvr_id must be a positive integer")
 		return
 	}
 	if err := c.service.UnbindNVR(r.Context(), req.NVRID); err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		handleServiceError(w, err)
 		return
 	}
 	respondData(w, http.StatusOK, map[string]bool{"unbound": true})
