@@ -69,7 +69,7 @@ CREATE TABLE `orangepis` (
     FOREIGN KEY (`ismart_id`) 
     REFERENCES `buildings` (`ismart_id`)
     ON UPDATE CASCADE 
-    ON DELETE SET NULL
+    ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='OrangePi设备表';
 
 -- 4. NVR设备表（通过 building_id 关联建筑）
@@ -108,8 +108,8 @@ CREATE TABLE `public_net_configs` (
 -- 插入管理员账户（密码: 123456）
 -- 使用 bcrypt 在线生成器生成的哈希值
 INSERT INTO `adminers` (`username`, `password_hash`, `created_at`, `updated_at`) VALUES
-('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl/2PKRPg7D9hJWRalFT/rvH2', NOW(), NOW()),
-('test_user', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl/2PKRPg7D9hJWRalFT/rvH2', NOW(), NOW());
+('admin', '$2b$12$c69LQAVpVP0YCFNVHHuitOySbNQNNqn2Ku9rrRYxxfH2zUhIjMnv2', NOW(), NOW()),
+('test_user', '$2b$12$c69LQAVpVP0YCFNVHHuitOySbNQNNqn2Ku9rrRYxxfH2zUhIjMnv2', NOW(), NOW());
 
 -- 插入建筑信息
 INSERT INTO `buildings` (`ismart_id`, `name`, `remark`, `created_at`, `updated_at`) VALUES
